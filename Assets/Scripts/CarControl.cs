@@ -30,43 +30,69 @@ public class CarControl : MonoBehaviour {
 	private int health;
 	private Vector3 comas;
 
+    [SerializeField] private Detector leftDetector;
+    [SerializeField] private Detector rightDetector;
+    [SerializeField] private Detector frontDetector;
+    [SerializeField] private Detector frontDetector2;
+
 	// Use this for initialization
 	void Start () {
 
-		foreach (GameObject body in bodys) {
-			body.SetActive (false);
-		}
-		int selector;
-		selector = Random.Range (0, bodys.Length); //randomizing car model
-		bodys[selector].SetActive (true);
-
-		//rb = GetComponent<Rigidbody> ();
-		//comas = new Vector3 (-1, -1, 0);
-		comas = new Vector3 (0, -0.3f, 0);
-		rb.centerOfMass = comas; //moving the center of mass to avoid wheelies
-		moving = true;
-		exploded = false;
-		dangerAhead = false;
-		health = 5000;
-
-		tarVel = Random.Range (minSpeed, maxSpeed); //choosing random speed
-		Vector3 locVel = transform.InverseTransformVector(rb.velocity); //getting the orientation of the car
-		locVel.x = -tarVel; //preparing a little push
-		rb.velocity = transform.TransformDirection (locVel); //pushing the car forward
-
-		//print(tarVel);
-		//tarVel *= 850; //target rotational velocity
-		tarVel *= 850;
-		//print(tarVel);
-		var motor = Wheel1.motor; //setting the spin
-		motor.targetVelocity = tarVel;
-		motor.force = frontPower;
-		Wheel3.motor = motor;
-		Wheel4.motor = motor;
-		motor.force = rearPower;
-		Wheel1.motor = motor;
-		Wheel2.motor = motor;
+        EnableBodies();
+        SetUpWheels();
+        EnableDetectors();
 	}
+
+    private void EnableBodies()
+    {
+        foreach (GameObject body in bodys) {
+            body.SetActive (false);
+        }
+        int selector;
+        selector = Random.Range (0, bodys.Length); //randomizing car model
+        bodys[selector].SetActive (true);
+    }
+
+    private void SetUpWheels()
+    {
+
+        //rb = GetComponent<Rigidbody> ();
+        //comas = new Vector3 (-1, -1, 0);
+        comas = new Vector3 (0, -0.3f, 0);
+        rb.centerOfMass = comas; //moving the center of mass to avoid wheelies
+        moving = true;
+        exploded = false;
+        dangerAhead = false;
+        health = 5000;
+
+        tarVel = Random.Range (minSpeed, maxSpeed); //choosing random speed
+        Vector3 locVel = transform.InverseTransformVector(rb.velocity); //getting the orientation of the car
+        locVel.x = -tarVel; //preparing a little push
+        rb.velocity = transform.TransformDirection (locVel); //pushing the car forward
+
+        //print(tarVel);
+        //tarVel *= 850; //target rotational velocity
+        tarVel *= 850;
+        //print(tarVel);
+        var motor = Wheel1.motor; //setting the spin
+        motor.targetVelocity = tarVel;
+        motor.force = frontPower;
+        Wheel3.motor = motor;
+        Wheel4.motor = motor;
+        motor.force = rearPower;
+        Wheel1.motor = motor;
+        Wheel2.motor = motor;
+    }
+
+    private void EnableDetectors()
+    {
+        frontDetector.ObstacleDetected += SlowDown;
+        frontDetector.ObstacleGone += SpeedUp;
+        frontDetector2.ObstacleDetected += SlowDown;
+        frontDetector2.ObstacleGone += SpeedUp;
+        rightDetector.ObstacleDetected += TurnLeft;
+        leftDetector.ObstacleDetected += TurnRight;
+    }
 
 	public void StopCar() {
 		moving = false;
@@ -77,7 +103,13 @@ public class CarControl : MonoBehaviour {
 		Wheel4.motor = motor;
 		Wheel1.motor = motor;
 		Wheel2.motor = motor;
+
+        frontDetector.Enabled = false;
+        frontDetector2.Enabled = false;
+        rightDetector.Enabled = false;
+        leftDetector.Enabled = false;
 	}
+        
 
 
 	void OnCollisionEnter(Collision col) {
@@ -154,7 +186,7 @@ public class CarControl : MonoBehaviour {
 		if (moving && !dangerAhead) { //damned cars don't go fast enough
 			if (rb.velocity.magnitude < tarVel / 850) { //gotta go fast
 				rb.AddForce (0, -700, 0);
-				rb.AddRelativeForce (-10000, 0, 0);
+				rb.AddRelativeForce (-7000, 0, 0);
 				rb.AddRelativeTorque (new Vector3 (0, 0, 100)); //also they want to do wheelies
 			}
 			//rb.AddRelativeTorque (new Vector3 (0, 0, 1));
